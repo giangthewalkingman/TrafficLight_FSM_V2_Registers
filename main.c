@@ -6,6 +6,8 @@
 #include <stdbool.h>
 #include <system_stm32f10x.h>
 #include <stm32f10x.h>
+#include "systick_time.h"
+#include "lcd_1602_drive.h"
 
 // define states
 #define Pgo 0
@@ -95,7 +97,24 @@ char lcdCNT[50];
 
 int main(void) {
 	PLLInit();
-
+	systick_init();
+	lcd_i2c_init(1);
+	lcd_i2c_msg(1, 1, 0, "LCD is ready");
+	S = AllStop;
+  while(1) {
+	  // Clear counter of timers
+	  TIM2->CNT = 0;
+	  TIM3->CNT = 0;
+	  TIM4->CNT = 0;
+	  // set output
+	  GPIOA->ODR = (fsm[S].out)|((fsm[S].out & 0x100)<<1);
+	  // delay
+	  TimerDelayMs(fsm[S].wait);
+	  //read input
+	  Input = inputValue;
+	  //S = next state
+	  S = fsm[S].next[Input];
+  }
 }
 
 static void sendRemaningTime(uint8_t color, uint32_t time) {
@@ -109,57 +128,52 @@ static void sendRemaningTime(uint8_t color, uint32_t time) {
 	switch(color)
 	{
 	case 1: // green
-		HD44780_Clear();
-		HD44780_SetCursor(14,0);
+		lcd_blank_12(1);
 		sprintf(lcdCNT,"%02ld", time+greenEnd*10);
-		HD44780_PrintStr(lcdCNT);
+	  lcd_i2c_msg(1, 1, 14, lcdCNT);
 		break;
 	case 2: // yellow
-		HD44780_Clear();
-		HD44780_SetCursor(7,0);
+		lcd_blank_12(1);
 		sprintf(lcdCNT,"%02ld", time);
-		HD44780_PrintStr(lcdCNT);
-//		HD44780_PrintStr("Hello World");
+		lcd_i2c_msg(1, 1, 7, lcdCNT);
 		break;
 	case 3: // warn
-		HD44780_Clear();
-		HD44780_SetCursor(7,0);
+		lcd_blank_12(1);
 		if(warnEnds == 1) {
-			sprintf(lcdCNT,"%lu", warnTime);
-			HD44780_PrintStr(lcdCNT);
+			sprintf(lcdCNT,"%02ld", warnTime);
+			lcd_i2c_msg(1, 1, 7, lcdCNT);
 			warnTime = 1;
 			break;
 		} else if (warnEnds == 2) {
 			sprintf(lcdCNT,"%02ld", warnTime);
-			HD44780_PrintStr(lcdCNT);
+			lcd_i2c_msg(1, 1, 7, lcdCNT);
 			warnTime = 2;
 			break;
 		} else if (warnEnds == 3) {
 			sprintf(lcdCNT,"%02ld", warnTime);
-			HD44780_PrintStr(lcdCNT);
+			lcd_i2c_msg(1, 1, 7, lcdCNT);
 			warnTime = 3;
 			break;
 		} else if (warnEnds == 4) {
 			sprintf(lcdCNT,"%02ld", warnTime);
-			HD44780_PrintStr(lcdCNT);
+			lcd_i2c_msg(1, 1, 7, lcdCNT);
 			warnTime = 4;
 			break;
 		} else if (warnEnds == 5) {
 			sprintf(lcdCNT,"%02ld", warnTime);
-			HD44780_PrintStr(lcdCNT);
+			lcd_i2c_msg(1, 1, 7, lcdCNT);
 			warnTime = 0;
 			break;
 		} else {
 			sprintf(lcdCNT,"%02ld", warnTime);
-			HD44780_PrintStr("00");
+			lcd_i2c_msg(1, 1, 7, "00");
 			warnTime = 0;
 			break;
 		}
 		break;
 	case 4: // allRed
-		HD44780_Clear();
-		HD44780_SetCursor(0,0);
-		HD44780_PrintStr("00");
+		lcd_blank_12(1);
+	  lcd_i2c_msg(1, 1, 0, "00");
 	}
 }
 
