@@ -198,7 +198,7 @@ static void TimerDelayMs(uint32_t time) {
 				if(greenEnd == 1) {
 					greenCNT = TIM2->CNT;
 					jumpToMain = 1;
-					TIM2->CR1 |= ~TIM_CR1_CEN;;
+					TIM2->CR1 &= ~TIM_CR1_CEN;
 					break;
 				}
 			}
@@ -211,7 +211,7 @@ static void TimerDelayMs(uint32_t time) {
 			while(1) {
 				sendRemaningTime(GREEN, TIM2->CNT);
 				if((greenEnd == nextGreenEnd) || (inputCompare != inputValue)) {
-					TIM2->CR1 |= ~TIM_CR1_CEN;;
+					TIM2->CR1 &= ~TIM_CR1_CEN;;
 					break;
 				}
 			}
@@ -242,7 +242,7 @@ static void TimerDelayMs(uint32_t time) {
 		while(1) {
 			sendRemaningTime(YELLOW, TIM3->CNT);
 			if(yellowEnd == 1) {
-				TIM3->CR1 |= ~TIM_CR1_CEN;;
+				TIM3->CR1 &= TIM_CR1_CEN;
 				break;
 			}
 		}
@@ -250,12 +250,12 @@ static void TimerDelayMs(uint32_t time) {
 		warnEnd = 0;
 		greenEnd = 0;
 		greenEnds = 0;
-		TIM4->CR1 |= TIM_CR1_CEN;;
+		TIM4->CR1 |= TIM_CR1_CEN;
 		while(1) {
 			sendRemaningTime(WARN, TIM4->CNT);
 			warnCNT = TIM4->CNT;
 			if(warnEnd == 1) {
-				TIM4->CR1 |= ~TIM_CR1_CEN;;
+				TIM4->CR1 &= TIM_CR1_CEN;;
 				break;
 			}
 		}
@@ -279,8 +279,6 @@ static void TIM_Init(void) {
 	TIM2->EGR |= TIM_EGR_UG;
 	TIM3->EGR |= TIM_EGR_UG;
 	TIM4->EGR |= TIM_EGR_UG;
-//	TIM2->CR1 |= (1<<0); //Enable the timer and start counting
-//	while (!(TIM2->SR & (1<<0))); //Wait for timer 2 to set
 }
 
 static void PLLInit(void) {
@@ -364,7 +362,7 @@ void TIM3_IRQHandler(void) {
 }
 
 void TIM4_IRQHandler(void) {
-	if ((TIM2->SR & TIM_SR_UIF) != 0) // if UIF flag is set
+	if ((TIM4->SR & TIM_SR_UIF) != 0) // if UIF flag is set
     {
       warnEnd += 1;
     	warnEnds += 1;
@@ -418,7 +416,7 @@ void EXTI9_5_IRQHandler(void) {
 		  // Falling edge (button pressed)
 			checkWalk = 0;
 		}
-		EXTI->PR |= (1<<3);  // Clear the interrupt flag by writing a 1 
+		EXTI->PR |= (1<<5);  // Clear the interrupt flag by writing a 1 
 	}
 	inputValue = (checkWalk << 2) | (checkSouth << 1) | (checkWest << 0);
 	checkGPIO = checkWalk | checkSouth |  checkWest;
