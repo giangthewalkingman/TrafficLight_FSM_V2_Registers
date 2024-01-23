@@ -33,14 +33,8 @@ const uint32_t redDelay = 180403;
 
 static void TimerDelayMs(uint32_t time);
 static void sendRemaningTime(uint8_t color, uint32_t time);
-static void SystemClock_Config(void);
 static void TIM_Init(void);
 static void GPIO_Init(void);
-static void SysTick_Init(uint32_t ticks);
-volatile static uint32_t TimeDelay;
-void SysTick_Handler(void);				//Delay 1ms
-void Delay(uint32_t nTime);
-
 static void PLLInit(void);
 static void Interupt_Config(void);
 
@@ -101,12 +95,7 @@ char lcdCNT[50];
 
 int main(void) {
 	PLLInit();
-	SysTick_Init(48000);
-	RCC->APB2ENR |= 0x0C;
-	while(0 == ((RCC->APB2ENR) & 0x0C)){}
 
-
-	
 }
 
 static void sendRemaningTime(uint8_t color, uint32_t time) {
@@ -259,21 +248,6 @@ static void TimerDelayMs(uint32_t time) {
 	}
 }
 
-
-void SysTick_Init(uint32_t ticks)
-{
-	SysTick->CTRL = 0x00000000;	// SysTick_CTRL_DISABLE;
-	SysTick->LOAD = ticks - 1;
-	// set interupt piority of SysTick to least urgency
-	NVIC_SetPriority (SysTick_IRQn, (1UL << __NVIC_PRIO_BITS) - 1UL);
-	SysTick->VAL = 0;	// reset the value
-	// select processor clock
-	SysTick->CTRL  = SysTick_CTRL_CLKSOURCE_Msk |
-                   SysTick_CTRL_TICKINT_Msk   |
-                   SysTick_CTRL_ENABLE_Msk;  /* Enable SysTick IRQ and SysTick Timer */
-	
-}
-
 static void TIM_Init(void) {
 	//Enable timer 2,3,4 clock
 	RCC->APB1ENR |= 0x07; 
@@ -293,29 +267,29 @@ static void TIM_Init(void) {
 }
 
 static void PLLInit(void) {
-	FLASH->ACR |= FLASH_ACR_LATENCY_2;
 	
-	// setting APB,AHB & HSE divisor
-	// read stm32f10x.h and rm0008 103/1136 for more detail
-	RCC->CFGR |= RCC_CFGR_PPRE1_DIV2;
-	RCC->CFGR |= RCC_CFGR_PPRE2_DIV1;
-	RCC->CFGR &= 0xFFFDFFFF;	// (PLLXTPRE=0)
-	// turn on HSE
+	//Flash Latency setup
+	FLASH->ACR	|= FLASH_ACR_LATENCY_0; // because we are running with 16MHz
+	RCC->CFGR	  |= RCC_CFGR_PPRE1_DIV1; // APB1 division is 1
+	RCC->CFGR	  |= RCC_CFGR_PPRE2_DIV1; // APB2 division is 1
+	RCC->CFGR 	|= RCC_CFGR_PLLXTPRE_HSE; // setting the division factor of the HSE clock to 0
+	
+	//Turn on HSE
 	RCC->CR 	|= RCC_CR_HSEON;
-	while (!(RCC->CR & RCC_CR_HSERDY)) 
-		;		// hse is ready
+	while (!(RCC->CR & RCC_CR_HSERDY)); // wait for hse ready
+	RCC->CFGR 	|= RCC_CFGR_PLLSRC_HSE; //Setting this bit configures HSE as the source of the PLL.
+	RCC->CFGR   |= RCC_CFGR_PLLMULL2; //Setting these bits to PLLMULL2 multiplies the HSE clock by a factor of 2
 	
-	// config PLL
-	RCC->CFGR |= RCC_CFGR_PLLMULL6;
-	RCC->CFGR |= RCC_CFGR_PLLSRC_HSE;
-	RCC->CFGR |= RCC_CR_PLLON;
-	while (!(RCC->CR & RCC_CR_PLLRDY))
-		;		// pll is ready
+	//Turn on PLL
+	RCC->CR     |= RCC_CR_PLLON;
+	while (!(RCC->CR & RCC_CR_PLLRDY)); // wait for PLL ready
 	
-	// sellect the pll for coreclock
-	RCC->CFGR  |= RCC_CFGR_SW_PLL;	// 0X02
+	//(System clock switch) set clock source to pll
+	RCC->CFGR 	|= RCC_CFGR_SW_PLL; 	
+	
 	while (!(RCC->CFGR & RCC_CFGR_SWS_PLL))
-		;		// clock is ready 48Mhz
+		; // wait for PLL to be CLK
+ 
 }
 
 
