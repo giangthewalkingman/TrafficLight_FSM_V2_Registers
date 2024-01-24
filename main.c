@@ -100,9 +100,8 @@ int main(void) {
 	GPIO_Init();
 	TIM_Init();
 	Interupt_Config();
-	systick_init();
-//	// lcd_i2c_init(1);
-//	// lcd_i2c_msg(1, 1, 0, "LCD is ready");
+	systick_init(); //necessarry function for I2C LCD
+	lcd_i2c_init(1);
 	S = AllStop;
   while(1) {
 	  // Clear counter of timers
@@ -131,52 +130,52 @@ static void sendRemaningTime(uint8_t color, uint32_t time) {
 	switch(color)
 	{
 	case 1: // green
-		// lcd_blank_12(1);
+		lcd_blank_12(1);
 		sprintf(lcdCNT,"%02u", time+greenEnd*10);
-	  // lcd_i2c_msg(1, 1, 14, lcdCNT);
+	  lcd_i2c_msg(1, 1, 14, lcdCNT);
 		break;
 	case 2: // yellow
-		// lcd_blank_12(1);
+		lcd_blank_12(1);
 		sprintf(lcdCNT,"%02u", time);
-		// lcd_i2c_msg(1, 1, 7, lcdCNT);
+		lcd_i2c_msg(1, 1, 7, lcdCNT);
 		break;
 	case 3: // warn
-		// lcd_blank_12(1);
+		lcd_blank_12(1);
 		if(warnEnds == 1) {
 			sprintf(lcdCNT,"%02u", warnTime);
-			// lcd_i2c_msg(1, 1, 7, lcdCNT);
+			lcd_i2c_msg(1, 1, 7, lcdCNT);
 			warnTime = 1;
 			break;
 		} else if (warnEnds == 2) {
 			sprintf(lcdCNT,"%02u", warnTime);
-			// lcd_i2c_msg(1, 1, 7, lcdCNT);
+			lcd_i2c_msg(1, 1, 7, lcdCNT);
 			warnTime = 2;
 			break;
 		} else if (warnEnds == 3) {
 			sprintf(lcdCNT,"%02u", warnTime);
-			// lcd_i2c_msg(1, 1, 7, lcdCNT);
+			lcd_i2c_msg(1, 1, 7, lcdCNT);
 			warnTime = 3;
 			break;
 		} else if (warnEnds == 4) {
 			sprintf(lcdCNT,"%02u", warnTime);
-			// lcd_i2c_msg(1, 1, 7, lcdCNT);
+			lcd_i2c_msg(1, 1, 7, lcdCNT);
 			warnTime = 4;
 			break;
 		} else if (warnEnds == 5) {
 			sprintf(lcdCNT,"%02u", warnTime);
-			// lcd_i2c_msg(1, 1, 7, lcdCNT);
+			 lcd_i2c_msg(1, 1, 7, lcdCNT);
 			warnTime = 0;
 			break;
 		} else {
 			sprintf(lcdCNT,"%02u", warnTime);
-			// lcd_i2c_msg(1, 1, 7, "00");
+			 lcd_i2c_msg(1, 1, 7, "00");
 			warnTime = 0;
 			break;
 		}
 		break;
 	case 4: // allRed
-		// lcd_blank_12(1);
-	  // lcd_i2c_msg(1, 1, 0, "00");
+		 lcd_blank_12(1);
+	   lcd_i2c_msg(1, 1, 0, "00");
 			break;
 	}
 }
@@ -310,11 +309,11 @@ static void PLLInit(void) {
 
 
 static void GPIO_Init(void) {
-	RCC->APB2ENR |= 0x0C; //Enable port A + port B 's clock
-	GPIOA->CRL |= 0x33333333;
-	GPIOA->CRH |= 0x33;
-	GPIOB->CRL |= 0x888000;
-//	GPIOA->BSRR |= 0x380000;
+	RCC->APB2ENR = 0x0D; //Enable port A + port B 's clock and AFIO function
+	GPIOA->CRL = 0x33333333;
+	GPIOA->CRH = 0x33;
+	GPIOB->CRL = 0x888000;
+	GPIOB->ODR &= ~0x38;
 }
 
 static void Interupt_Config(void) {
